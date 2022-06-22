@@ -70,9 +70,13 @@ export interface CoreService {
         exportBinaries?: boolean;
         compilerWarnings?: CompilerWarnings;
       }>
-  ): Promise<void>;
-  upload(options: CoreService.Upload.Options): Promise<void>;
-  uploadUsingProgrammer(options: CoreService.Upload.Options): Promise<void>;
+  ): Promise<CoreService.Compile.Result>;
+  upload(
+    options: CoreService.Upload.Options
+  ): Promise<CoreService.Compile.Result>;
+  uploadUsingProgrammer(
+    options: CoreService.Upload.Options
+  ): Promise<CoreService.Compile.Result>;
   burnBootloader(options: CoreService.Bootloader.Options): Promise<void>;
 }
 
@@ -84,6 +88,13 @@ export namespace CoreService {
       readonly optimizeForDebug: boolean;
       readonly verbose: boolean;
       readonly sourceOverride: Record<string, string>;
+    }
+    export interface Result {
+      /**
+       * The URI version of the [`CompileResponse#build_path`](https://github.com/arduino/arduino-cli/blob/c1b10f562f1e1a112e215a69b84e2f2b69e3af2d/rpc/cc/arduino/cli/commands/v1/compile.proto#L98).
+       * For example: file:///private/var/folders/z1/xkw1yh5n7rz4n8djprp1mdn80000gn/T/arduino-sketch-10078B54BD22497263B8DA67E0BFC260
+       */
+      readonly buildOutputUri: string;
     }
   }
 

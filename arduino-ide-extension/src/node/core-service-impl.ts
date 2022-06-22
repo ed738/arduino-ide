@@ -47,12 +47,12 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
       exportBinaries?: boolean;
       compilerWarnings?: CompilerWarnings;
     }
-  ): Promise<void> {
+  ): Promise<CoreService.Compile.Result> {
     const coreClient = await this.coreClient();
     const { client, instance } = coreClient;
     const handler = this.createOnDataHandler();
     const request = this.compileRequest(options, instance);
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<CoreService.Compile.Result>((resolve, reject) => {
       client
         .compile(request)
         .on('data', handler.onData)
@@ -119,7 +119,9 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
     return request;
   }
 
-  upload(options: CoreService.Upload.Options): Promise<void> {
+  upload(
+    options: CoreService.Upload.Options
+  ): Promise<CoreService.Compile.Result> {
     return this.doUpload(
       options,
       () => new UploadRequest(),
@@ -132,7 +134,7 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
 
   async uploadUsingProgrammer(
     options: CoreService.Upload.Options
-  ): Promise<void> {
+  ): Promise<CoreService.Compile.Result> {
     return this.doUpload(
       options,
       () => new UploadUsingProgrammerRequest(),
@@ -155,8 +157,10 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
       info: CoreError.ErrorInfo[]
     ) => ApplicationError<number, CoreError.ErrorInfo[]>,
     task: string
-  ): Promise<void> {
-    await this.compile(Object.assign(options, { exportBinaries: false }));
+  ): Promise<CoreService.Compile.Result> {
+    const result = await this.compile(
+      Object.assign(options, { exportBinaries: false })
+    );
 
     const coreClient = await this.coreClient();
     const { client, instance } = coreClient;
@@ -167,7 +171,7 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
     );
     const handler = this.createOnDataHandler();
     return this.notifyUploadWillStart(options).then(() =>
-      new Promise<void>((resolve, reject) => {
+      new Promise<CoreService.Compile.Result>((resolve, reject) => {
         responseHandler(client, request)
           .on('data', handler.onData)
           .on('error', (error) => {
@@ -193,7 +197,7 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
               );
             }
           })
-          .on('end', resolve);
+          .on('end', () => resolve(result));
       }).finally(async () => {
         handler.dispose();
         await this.notifyUploadDidFinish(options);
