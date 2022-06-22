@@ -95,6 +95,7 @@ export namespace CoreService {
        * For example: file:///private/var/folders/z1/xkw1yh5n7rz4n8djprp1mdn80000gn/T/arduino-sketch-10078B54BD22497263B8DA67E0BFC260
        */
       readonly buildOutputUri: string;
+      // TODO: do we need the fqbn here? so that IDE2 can track the boards
     }
   }
 

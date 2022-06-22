@@ -50,7 +50,19 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
   ): Promise<CoreService.Compile.Result> {
     const coreClient = await this.coreClient();
     const { client, instance } = coreClient;
-    const handler = this.createOnDataHandler();
+    let buildPath: string | undefined = undefined;
+    const handler = this.createOnDataHandler<CompileResponse>((response) => {
+      const currentBuildPath = response.getBuildPath();
+      if (!buildPath) {
+        buildPath = currentBuildPath;
+      } else {
+        if (!!currentBuildPath && currentBuildPath !== buildPath) {
+          throw new Error(
+            `The CLI has already provided a build path: <${buildPath}>, and there is a new build path value: <${currentBuildPath}>.`
+          );
+        }
+      }
+    });
     const request = this.compileRequest(options, instance);
     return new Promise<CoreService.Compile.Result>((resolve, reject) => {
       client
@@ -83,7 +95,17 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
             reject(CoreError.VerifyFailed(message, compilerErrors));
           }
         })
-        .on('end', resolve);
+        .on('end', () => {
+          if (!buildPath) {
+            reject(
+              new Error(
+                `Have not received the build path from the CLI while running the compilation.`
+              )
+            );
+          } else {
+            resolve({ buildOutputUri: FileUri.create(buildPath).toString() });
+          }
+        });
     }).finally(() => handler.dispose());
   }
 
@@ -289,7 +311,9 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
     return request;
   }
 
-  private createOnDataHandler<R extends StreamingResponse>(): Disposable & {
+  private createOnDataHandler<R extends StreamingResponse>(
+    onResponse?: (response: R) => void
+  ): Disposable & {
     stderr: Buffer[];
     onData: (response: R) => void;
   } {
@@ -301,10 +325,14 @@ export class CoreServiceImpl extends CoreClientAware implements CoreService {
         }
       });
     });
-    const onData = StreamingResponse.createOnDataHandler(stderr, (out, err) => {
-      buffer.addChunk(out);
-      buffer.addChunk(err, OutputMessage.Severity.Error);
-    });
+    const onData = StreamingResponse.createOnDataHandler(
+      stderr,
+      (out, err) => {
+        buffer.addChunk(out);
+        buffer.addChunk(err, OutputMessage.Severity.Error);
+      },
+      onResponse
+    );
     return {
       dispose: () => buffer.dispose(),
       stderr,
@@ -373,13 +401,17 @@ namespace StreamingResponse {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   export function createOnDataHandler<R extends StreamingResponse>(
     stderr: Uint8Array[],
-    onData: (out: Uint8Array, err: Uint8Array) => void
+    onData: (out: Uint8Array, err: Uint8Array) => void,
+    onResponse?: (response: R) => void
   ): (response: R) => void {
     return (response: R) => {
       const out = response.getOutStream_asU8();
       const err = response.getErrStream_asU8();
       stderr.push(err);
       onData(out, err);
+      if (onResponse) {
+        onResponse(response);
+      }
     };
   }
 }
