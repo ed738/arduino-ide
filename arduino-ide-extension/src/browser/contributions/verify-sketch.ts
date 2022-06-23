@@ -115,7 +115,7 @@ export class VerifySketch extends CoreServiceContribution {
       const verbose = this.preferences.get('arduino.compile.verbose');
       const compilerWarnings = this.preferences.get('arduino.compile.warnings');
       this.outputChannelManager.getChannel('Arduino').clear();
-      const result = await this.coreService.compile({
+      const { buildOutputUri } = await this.coreService.compile({
         sketch,
         board,
         optimizeForDebug: this.editorMode.compileForDebug,
@@ -124,7 +124,10 @@ export class VerifySketch extends CoreServiceContribution {
         sourceOverride,
         compilerWarnings,
       });
-      console.log('THE BUILD CACHE IS AT ' + result.buildOutputUri);
+      this.commandService.executeCommand(
+        'arduino.languageserver.notifyBuildDidComplete',
+        { fqbn, buildOutputUri }
+      );
       this.messageService.info(
         nls.localize('arduino/sketch/doneCompiling', 'Done compiling.'),
         { timeout: 3000 }
