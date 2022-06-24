@@ -170,9 +170,9 @@
     },
     "languageServer": {
       "version":  {
-        "owner": "arduino",
+        "owner": "kittaakos",
         "repo": "arduino-language-server",
-        "commitish": "speed_improvements"
+        "commitish": "full-rebuild"
       }
     }
   }
