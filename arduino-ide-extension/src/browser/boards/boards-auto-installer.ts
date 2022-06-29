@@ -8,7 +8,7 @@ import {
 } from '../../common/protocol/boards-service';
 import { BoardsServiceProvider } from './boards-service-provider';
 import { BoardsConfig } from './boards-config';
-import { Installable, ResponseServiceArduino } from '../../common/protocol';
+import { Installable, ResponseServiceClient } from '../../common/protocol';
 import { BoardsListWidgetFrontendContribution } from './boards-widget-frontend-contribution';
 import { nls } from '@theia/core/lib/common';
 
@@ -27,8 +27,8 @@ export class BoardsAutoInstaller implements FrontendApplicationContribution {
   @inject(BoardsServiceProvider)
   protected readonly boardsServiceClient: BoardsServiceProvider;
 
-  @inject(ResponseServiceArduino)
-  protected readonly responseService: ResponseServiceArduino;
+  @inject(ResponseServiceClient)
+  protected readonly responseService: ResponseServiceClient;
 
   @inject(BoardsListWidgetFrontendContribution)
   protected readonly boardsManagerFrontendContribution: BoardsListWidgetFrontendContribution;
